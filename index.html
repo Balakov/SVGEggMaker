@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Egg Maker</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700&display=swap" rel="stylesheet">
+    <style>
+
+        body {
+            background-color: #afd7d9;
+            color: #0c008c;
+            font-family: "Nunito",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+        }
+
+        #preview {
+            border-radius: 20px;
+            border-style: dashed;
+            border-color: #ccc;
+        }
+
+        #generator {
+            box-shadow: 0 24px 32px rgb(16 42 67 / 8%);
+            border-radius: 48px;
+            background-color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <div class="container col-xl-10 col-xxl-8">
+
+        <div class="row align-items-center g-lg-5 p-5 mt-5" id="generator">
+            <div class="col-lg-7 m-0">
+
+                <div id="preview">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 400 400">
+                        <rect width="100%" height="100%" fill="#000" />
+                    </svg>
+                </div>
+
+            </div>
+            <div class="col-md-10 mx-auto col-lg-5 m-0">
+                <h1 class="text-center mb-4">Egg Maker</h1>
+                <div id="controls" class="mb-4">
+                    <label for="radiusX">Ball Width</label>
+                    <input class="form-range" type="range" id="radiusX" name="radiusX" min="50" max="200" value="80" />
+                    <label for="radiusY">Ball Height</label>
+                    <input class="form-range" type="range" id="radiusY" name="radiusY" min="50" max="200" value="100"/>
+                    <label for="topHandleWidth">Top Flatness</label>
+                    <input class="form-range" type="range" id="topHandleWidth" name="topHandleWidth" min="50" max="200" value="74"/>
+                    <label for="bottomHandleWidth">Base Roundness</label>
+                    <input class="form-range" type="range" id="bottomHandleWidth" name="bottomHandleWidth" min="50" max="200" value="100"/>
+                    <label for="verticalHandleLength">Vertical Taper</label>
+                    <input class="form-range" type="range" id="verticalHandleLength" name="verticalHandleLength" min="50" max="200" value="100"/>
+                    <label for="midPointOffset">Taper Start</label>
+                    <input class="form-range" type="range" id="midPointOffset" name="midPointOffset" min="50" max="200" value="115"/>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-8">
+                        <div class="btn btn-primary w-100" id="copy_button">Copy SVG to Clipboard</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script>
+
+        function copyToClipboard() {
+            const content = document.getElementById('preview').innerHTML;
+            navigator.clipboard.writeText(content);
+        }
+
+        function onChange(e) {
+
+            let startX = 200;
+            let startY = 200;
+
+            const radiusX = parseInt(document.getElementById('radiusX').value);
+            const radiusY = parseInt(document.getElementById('radiusY').value);
+            const topHandleWidth = parseInt(document.getElementById('topHandleWidth').value);
+            const bottomHandleWidth = parseInt(document.getElementById('bottomHandleWidth').value);
+            const verticalHandleLength = parseInt(document.getElementById('verticalHandleLength').value);
+            const midPointOffset = parseInt(document.getElementById('midPointOffset').value);
+
+            drawEgg(startX, startY, radiusX, radiusY, topHandleWidth, bottomHandleWidth, verticalHandleLength, midPointOffset);
+        }
+
+        function drawEgg(startX, startY, radiusX, radiusY, topHandleWidth, bottomHandleWidth, verticalHandleLength, midPointOffset) {
+
+            const svg = document.querySelector("svg");
+            const svgns = "http://www.w3.org/2000/svg";
+
+            svg.innerHTML = "";
+
+            let points = [];
+            const drawDebug = false;
+            const drawDebugLines = false;
+
+            startY -= radiusY;
+
+            points.push({ x: startX - radiusX, y: startY + midPointOffset, cp1x: startX - topHandleWidth / 2, cp1y: startY, cp2x: startX - radiusX, cp2y: (startY + midPointOffset) - verticalHandleLength / 2 });
+            points.push({ x: startX, y: startY + radiusY * 2, cp1x: startX - radiusX, cp1y: (startY + midPointOffset) + verticalHandleLength / 2, cp2x: startX - bottomHandleWidth / 2, cp2y: startY + radiusY * 2 });
+            points.push({ x: startX + radiusX, y: startY + midPointOffset, cp1x: startX + bottomHandleWidth / 2, cp1y: startY + radiusY * 2, cp2x: startX + radiusX, cp2y: (startY + midPointOffset) + verticalHandleLength / 2 });
+            points.push({ x: startX, y: startY, cp1x: startX + radiusX, cp1y: (startY + midPointOffset) - verticalHandleLength / 2, cp2x: startX + topHandleWidth / 2, cp2y: startY });
+
+            let curve = document.createElementNS(svgns, "path");
+            svg.appendChild(curve);
+
+            curve.setAttribute("fill", "#0080ff");
+
+            let d = "M" + startX + " " + startY;
+
+            if(drawDebug) {
+                let startCircle = document.createElementNS(svgns, "circle");
+                startCircle.setAttribute("cx", startX);
+                startCircle.setAttribute("cy", startY);
+                startCircle.setAttribute("r", 10);
+                startCircle.setAttribute("fill", "green");
+                svg.appendChild(startCircle);
+            }
+
+            let currentPointX = startX;
+            let currentPointY = startY;
+
+            for (let i = 0; i < points.length; i++) {
+                d += "C" + points[i].cp1x + " " + points[i].cp1y + " " + points[i].cp2x + " " + points[i].cp2y + " " + points[i].x + " " + points[i].y;
+
+                if(drawDebug) {
+                    let handleLine1 = document.createElementNS(svgns, "line");
+                    handleLine1.setAttribute("x1", currentPointX);
+                    handleLine1.setAttribute("y1", currentPointY);
+                    handleLine1.setAttribute("x2", points[i].cp1x);
+                    handleLine1.setAttribute("y2", points[i].cp1y);
+                    handleLine1.setAttribute("stroke", "black");
+                    handleLine1.setAttribute("stroke-width", "4");
+                    svg.appendChild(handleLine1);
+
+                    let handleCircle1 = document.createElementNS(svgns, "circle");
+                    handleCircle1.setAttribute("cx", points[i].cp1x);
+                    handleCircle1.setAttribute("cy", points[i].cp1y);
+                    handleCircle1.setAttribute("r", 10);
+                    handleCircle1.setAttribute("fill", "orange");
+                    svg.appendChild(handleCircle1);
+
+                    let handleLine2 = document.createElementNS(svgns, "line");
+                    handleLine2.setAttribute("x1", points[i].x);
+                    handleLine2.setAttribute("y1", points[i].y);
+                    handleLine2.setAttribute("x2", points[i].cp2x);
+                    handleLine2.setAttribute("y2", points[i].cp2y);
+                    handleLine2.setAttribute("stroke", "black");
+                    handleLine2.setAttribute("stroke-width", "4");
+                    svg.appendChild(handleLine2);
+
+                    let handleCircle2 = document.createElementNS(svgns, "circle");
+                    handleCircle2.setAttribute("cx", points[i].cp2x);
+                    handleCircle2.setAttribute("cy", points[i].cp2y);
+                    handleCircle2.setAttribute("r", 10);
+                    handleCircle2.setAttribute("fill", "blue");
+                    svg.appendChild(handleCircle2);
+
+                    if(drawDebugLines) {
+                        let line = document.createElementNS(svgns, "line");
+                        line.setAttribute("x1", currentPointX);
+                        line.setAttribute("y1", currentPointY);
+                        line.setAttribute("x2", points[i].x);
+                        line.setAttribute("y2", points[i].y);
+                        line.setAttribute("stroke", "black");
+                        line.setAttribute("stroke-width", "10");
+                        svg.appendChild(line);
+                    }
+
+                    currentPointX = points[i].x;
+                    currentPointY = points[i].y;
+                }
+            }
+
+            curve.setAttribute("d", d + "z");
+        }
+
+        document.getElementById('radiusX').addEventListener('input', onChange);
+        document.getElementById('radiusY').addEventListener('input', onChange);
+        document.getElementById('topHandleWidth').addEventListener('input', onChange);
+        document.getElementById('bottomHandleWidth').addEventListener('input', onChange);
+        document.getElementById('verticalHandleLength').addEventListener('input', onChange);
+        document.getElementById('midPointOffset').addEventListener('input', onChange);
+
+        document.getElementById('copy_button').addEventListener('click', copyToClipboard);
+
+        onChange();
+    </script>
+</body>
+
+</html>
